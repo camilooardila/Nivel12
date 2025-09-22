@@ -127,8 +127,25 @@ class Rompecabezas extends Phaser.Scene {
   }
 
   setupMobileOptimizations() {
+    // Detectar Safari específicamente para optimizaciones más agresivas
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
     // Configurar input para móvil
     this.input.addPointer(2); // Soporte para multi-touch
+    
+    // Optimizaciones específicas para Safari iOS
+    if (isSafari && isIOS) {
+      // Desactivar efectos visuales pesados
+      this.physics.world.timeScale = 0.7; // Reducir velocidad de física
+      
+      // Limitar FPS para Safari
+      this.sys.game.loop.targetFps = 30;
+      
+      // Configurar memoria más agresiva
+      this.sys.game.config.render.maxTextures = 8;
+      this.sys.game.config.render.batchSize = 1000;
+    }
     
     // Prevenir zoom en móvil
     if (this.sys.game.device.input.touch) {
@@ -1327,12 +1344,22 @@ class Rompecabezas extends Phaser.Scene {
     line.lineTo(endX, endY);
     line.strokePath();
     
-    // Detectar móvil y específicamente iOS para optimizaciones especiales
+    // Detectar móvil y específicamente iOS/Safari para optimizaciones especiales
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     
-    if (isMobile) {
-      // Efecto muy simple para móvil - solo un pequeño cambio de escala
+    // Optimizaciones ultra-agresivas para Safari iOS
+    if (isSafari && isIOS) {
+      // NO hacer animaciones en Safari iOS - solo cambio instantáneo
+      [node1, node2].forEach(node => {
+        node.setScale(1.05); // Cambio instantáneo sin animación
+        this.time.delayedCall(100, () => {
+          node.setScale(1); // Restaurar sin animación
+        });
+      });
+    } else if (isMobile) {
+      // Efecto muy simple para otros móviles
       [node1, node2].forEach(node => {
         this.tweens.add({
           targets: node,
@@ -1366,8 +1393,13 @@ class Rompecabezas extends Phaser.Scene {
     // Actualizar contador
     this.updateConnectionCounter();
     
-    // OPTIMIZACIÓN CRÍTICA PARA iOS: Limpiar recursos antes de completar
-    if (this.connections.length >= 5 && isIOS) {
+    // OPTIMIZACIÓN CRÍTICA PARA Safari iOS: Limpiar recursos más agresivamente
+    if (this.connections.length >= 4 && isSafari && isIOS) {
+      // Limpiar tweens y efectos antes de continuar en Safari iOS
+      this.time.delayedCall(50, () => {
+        this.cleanupResourcesForSafari();
+      });
+    } else if (this.connections.length >= 5 && isIOS) {
       // Limpiar tweens y efectos antes de continuar en iOS
       this.time.delayedCall(100, () => {
         this.cleanupResourcesForIOS();
@@ -1376,7 +1408,8 @@ class Rompecabezas extends Phaser.Scene {
     
     // Verificar si se completó el puzzle (6 conexiones mínimas)
     if (this.connections.length >= 6) {
-      this.time.delayedCall(isIOS ? 800 : 500, () => {
+      const delay = isSafari && isIOS ? 1200 : (isIOS ? 800 : 500);
+      this.time.delayedCall(delay, () => {
         this.completeNeuralPuzzle();
       });
     }
@@ -1465,19 +1498,28 @@ class Rompecabezas extends Phaser.Scene {
   }
 
   completeNeuralPuzzle() {
+    // Detectar Safari iOS para optimizaciones ultra-agresivas
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
+    // Limpiar recursos ANTES de cualquier animación en Safari iOS
+    if (isSafari && isIOS) {
+      this.cleanupResourcesForSafari();
+    }
+    
     // Calcular tiempo de finalización
     this.completionTime = Date.now();
     const timeElapsed = Math.round((this.completionTime - this.startTime) / 1000);
-    
-    // Detectar iOS para optimizaciones específicas
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
     // Obtener dimensiones del juego para centrado perfecto
     const centerX = this.sys.game.config.width / 2;  // 500
     const centerY = this.sys.game.config.height / 2; // 250
     
-    // Efectos de celebración optimizados para iOS
-    if (isIOS) {
+    // Efectos de celebración optimizados
+    if (isSafari && isIOS) {
+      // NO crear efectos de celebración en Safari iOS
+      console.log('Safari iOS: Saltando efectos de celebración para evitar congelamiento');
+    } else if (isIOS) {
       // Versión simplificada para iOS
       this.createSimpleCelebrationEffect();
     } else {
@@ -1485,9 +1527,12 @@ class Rompecabezas extends Phaser.Scene {
       this.createCelebrationEffect();
     }
     
-    // Animación de todos los nodos - simplificada en iOS
+    // Animación de todos los nodos - eliminada completamente en Safari iOS
     this.neuralNetworkNodes.forEach((node, index) => {
-      if (isIOS) {
+      if (isSafari && isIOS) {
+        // NO animaciones en Safari iOS - solo cambio instantáneo
+        node.setScale(1.2);
+      } else if (isIOS) {
         // Animación simple para iOS
         this.tweens.add({
           targets: node,
@@ -2078,6 +2123,39 @@ class Rompecabezas extends Phaser.Scene {
     this.time.delayedCall(1000, () => {
       this.physics.world.timeScale = 1;
     });
+  }
+  
+  cleanupResourcesForSafari() {
+    // Limpieza ultra-agresiva específica para Safari iOS
+    
+    // Detener TODOS los tweens inmediatamente
+    this.tweens.killAll();
+    
+    // Limpiar todos los timers
+    this.time.removeAllEvents();
+    
+    // Forzar garbage collection si está disponible
+    if (window.gc) {
+      window.gc();
+    }
+    
+    // Limpiar cache de texturas no utilizadas
+    this.textures.each((texture) => {
+      if (texture.key !== '__DEFAULT' && texture.key !== '__MISSING') {
+        texture.destroy();
+      }
+    });
+    
+    // Reducir calidad de render para Safari
+    this.renderer.setPixelRatio(0.5);
+    
+    // Pausar física temporalmente
+    this.physics.world.pause();
+    this.time.delayedCall(200, () => {
+      this.physics.world.resume();
+    });
+    
+    console.log('Safari iOS: Recursos limpiados agresivamente');
   }
   
   // Optimizar creación de partículas para evitar lag en móvil
