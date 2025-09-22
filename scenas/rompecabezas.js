@@ -91,20 +91,22 @@ class Rompecabezas extends Phaser.Scene {
     this.physics.world.fixedStep = false;
   }
 
+
   create() {
-    // Configurar optimizaciones para móvil
+    // Configuración unificada para todas las plataformas
     this.setupMobileOptimizations();
     
     // Configurar la música de fondo
-    this.musicManager = MusicManager.getInstance();
-    if (!this.musicManager.isPlaying()) {
-      const backgroundMusic = this.sound.add('backgroundMusic');
-      this.musicManager.setMusic(backgroundMusic);
-      this.musicManager.playMusic();
+    try {
+      this.musicManager = MusicManager.getInstance();
+      if (!this.musicManager.isPlaying()) {
+        const backgroundMusic = this.sound.add('backgroundMusic');
+        this.musicManager.setMusic(backgroundMusic);
+        this.musicManager.playMusic();
+      }
+    } catch (e) {
+      console.log('Error configurando música:', e);
     }
-    
-    // Audio setup removido para evitar errores
-    // this.setupAudio();
     
     // Crear fondo animado de Omega-1
     this.createOmega1Background();
@@ -121,65 +123,61 @@ class Rompecabezas extends Phaser.Scene {
     this.nodes = [];
     this.connections = [];
     this.neuralNetworkNodes = [];
-    
-    // Configurar interacción para habilitar audio (removido)
-    // this.input.on('pointerdown', this.enableAudio, this);
   }
 
   setupMobileOptimizations() {
-    // Detectar Safari específicamente para optimizaciones más agresivas
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
-    // Configurar input para móvil
-    this.input.addPointer(2); // Soporte para multi-touch
-    
-    // Optimizaciones específicas para Safari iOS
-    if (isSafari && isIOS) {
-      // Desactivar efectos visuales pesados
-      this.physics.world.timeScale = 0.7; // Reducir velocidad de física
-      
-      // Limitar FPS para Safari
-      this.sys.game.loop.targetFps = 30;
-      
-      // Configurar memoria más agresiva
-      this.sys.game.config.render.maxTextures = 8;
-      this.sys.game.config.render.batchSize = 1000;
+    try {
+      // Configurar input para móvil
+      this.input.addPointer(2); // Soporte para multi-touch
+    } catch (e) {
+      console.log('Error configurando input, continuando...');
     }
     
     // Prevenir zoom en móvil
     if (this.sys.game.device.input.touch) {
-      this.input.mouse.disableContextMenu();
+      try {
+        this.input.mouse.disableContextMenu();
+      } catch (e) {
+        console.log('Error deshabilitando menú contextual');
+      }
       
       // Configurar viewport para móvil
-      const viewport = document.querySelector('meta[name="viewport"]');
-      if (viewport) {
-        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-      } else {
-        const meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-        document.getElementsByTagName('head')[0].appendChild(meta);
+      try {
+        const viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+        } else {
+          const meta = document.createElement('meta');
+          meta.name = 'viewport';
+          meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+          document.getElementsByTagName('head')[0].appendChild(meta);
+        }
+      } catch (e) {
+        console.log('Error configurando viewport');
       }
       
       // Prevenir comportamientos por defecto en móvil
-      document.addEventListener('touchstart', (e) => {
-        if (e.target.tagName === 'CANVAS') {
-          e.preventDefault();
-        }
-      }, { passive: false });
-      
-      document.addEventListener('touchend', (e) => {
-        if (e.target.tagName === 'CANVAS') {
-          e.preventDefault();
-        }
-      }, { passive: false });
-      
-      document.addEventListener('touchmove', (e) => {
-        if (e.target.tagName === 'CANVAS') {
-          e.preventDefault();
-        }
-      }, { passive: false });
+      try {
+        document.addEventListener('touchstart', (e) => {
+          if (e.target.tagName === 'CANVAS') {
+            e.preventDefault();
+          }
+        }, { passive: false });
+        
+        document.addEventListener('touchend', (e) => {
+          if (e.target.tagName === 'CANVAS') {
+            e.preventDefault();
+          }
+        }, { passive: false });
+        
+        document.addEventListener('touchmove', (e) => {
+          if (e.target.tagName === 'CANVAS') {
+            e.preventDefault();
+          }
+        }, { passive: false });
+      } catch (e) {
+        console.log('Error configurando eventos touch');
+      }
     }
   }
 
@@ -371,6 +369,27 @@ class Rompecabezas extends Phaser.Scene {
     }
   }
   */
+
+  createSimplifiedBackground() {
+    // Fondo simple para Safari iOS - sin efectos pesados
+    const bg = this.add.rectangle(500, 250, 1000, 500, 0x1a1a2e);
+    bg.setAlpha(0.8);
+    
+    // Título simple sin animaciones
+    const title = this.add.text(500, 100, '🚀 MISIÓN OMEGA-1', {
+      fontSize: '28px',
+      fill: '#ff6b35',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+    
+    const subtitle = this.add.text(500, 140, 'Rompecabezas Neural', {
+      fontSize: '16px',
+      fill: '#00ccff',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+    
+    console.log('Safari iOS: Fondo simplificado creado');
+  }
 
   createOmega1Background() {
     // Fondo del planeta artificial
@@ -666,7 +685,18 @@ class Rompecabezas extends Phaser.Scene {
   }
 
   transitionToNeuralPuzzle() {
-    // Transición suave con fade out
+    // Detectar Safari iOS para transición simplificada
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
+    if (isSafari && isIOS) {
+      // Transición directa sin animaciones para Safari iOS
+      console.log('Safari iOS: Transición directa al puzzle');
+      this.startNeuralNetworkPuzzle();
+      return;
+    }
+    
+    // Transición suave con fade out para otros navegadores
     const fadeOverlay = this.add.rectangle(500, 250, 1000, 500, 0x000000, 0);
     
     this.tweens.add({
@@ -686,9 +716,19 @@ class Rompecabezas extends Phaser.Scene {
   }
 
   startNeuralNetworkPuzzle() {
+    // Detectar Safari iOS para inicialización simplificada
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
     // Limpiar pantalla
     this.children.removeAll();
-    this.createOmega1Background();
+    
+    if (isSafari && isIOS) {
+      console.log('Safari iOS: Creando fondo simplificado para puzzle');
+      this.createSimplifiedBackground();
+    } else {
+      this.createOmega1Background();
+    }
     
     this.gameState = 'neural_puzzle';
     
@@ -936,13 +976,8 @@ class Rompecabezas extends Phaser.Scene {
         ease: 'Back.easeOut'
       });
       
-      // Efectos de interacción mejorados
-      nodeCore.on('pointerdown', () => {
-        // Sonido de click (removido para evitar errores)
-        // if (this.sounds.click) {
-        //   this.sounds.click.play();
-        // }
-        
+      // Efectos de interacción unificados para todas las plataformas
+      const handleNodeSelection = () => {
         // Efecto de impacto visual
         this.tweens.add({
           targets: [nodeCore, innerRing],
@@ -954,7 +989,6 @@ class Rompecabezas extends Phaser.Scene {
         
         // Onda de choque
         const shockwave = this.add.circle(pos.x, pos.y, 20, layerColor.primary, 0.3);
-        shockwave.setBlendMode(Phaser.BlendModes.ADD);
         this.tweens.add({
           targets: shockwave,
           scale: 3,
@@ -965,17 +999,14 @@ class Rompecabezas extends Phaser.Scene {
         });
         
         this.selectNode(nodeCore, outerRing, nodeText, energyParticles);
-      });
+      };
       
-      nodeCore.on('pointerover', () => {
-        // Sonido de hover
-        if (this.sounds && this.sounds.click) {
-          if (this.sounds && this.sounds.click) {
-        this.sounds.click.play();
-      }
-        }
-        
-        // Efectos de hover espectaculares
+      // Eventos unificados para todas las plataformas
+      nodeCore.on('pointerdown', handleNodeSelection);
+      
+      // Eventos hover unificados
+      const handleNodeHover = () => {
+        // Efectos de hover para todas las plataformas
         this.tweens.add({
           targets: nodeCore,
           scale: 1.4,
@@ -1029,7 +1060,15 @@ class Rompecabezas extends Phaser.Scene {
         
         // Mostrar información del nodo
         this.showNodeInfo(nodeCore, pos.layer);
-      });
+      };
+      
+      // Solo agregar eventos hover en navegadores que no sean Safari iOS
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      
+      if (!(isSafari && isIOS)) {
+        nodeCore.on('pointerover', handleNodeHover);
+      }
       
       nodeCore.on('pointerout', () => {
         if (this.selectedNode !== nodeCore) {
@@ -1106,7 +1145,7 @@ class Rompecabezas extends Phaser.Scene {
       // Cambiar el color al estado seleccionado usando setFillStyle
       node.setFillStyle(0x00ffff, 0.8);
       
-      // Efectos visuales simplificados para móvil
+      // Efectos visuales para todas las plataformas
       this.tweens.add({
         targets: node,
         scaleX: 1.15,
@@ -1344,45 +1383,17 @@ class Rompecabezas extends Phaser.Scene {
     line.lineTo(endX, endY);
     line.strokePath();
     
-    // Detectar móvil y específicamente iOS/Safari para optimizaciones especiales
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    
-    // Optimizaciones ultra-agresivas para Safari iOS
-    if (isSafari && isIOS) {
-      // NO hacer animaciones en Safari iOS - solo cambio instantáneo
-      [node1, node2].forEach(node => {
-        node.setScale(1.05); // Cambio instantáneo sin animación
-        this.time.delayedCall(100, () => {
-          node.setScale(1); // Restaurar sin animación
-        });
+    // Efecto unificado para todas las plataformas
+    [node1, node2].forEach(node => {
+      this.tweens.add({
+        targets: node,
+        scaleX: 1.1,
+        scaleY: 1.1,
+        duration: 150,
+        yoyo: true,
+        ease: 'Power2.easeInOut'
       });
-    } else if (isMobile) {
-      // Efecto muy simple para otros móviles
-      [node1, node2].forEach(node => {
-        this.tweens.add({
-          targets: node,
-          scaleX: 1.1,
-          scaleY: 1.1,
-          duration: 150,
-          yoyo: true,
-          ease: 'Power2.easeInOut'
-        });
-      });
-    } else {
-      // Efecto completo para desktop
-      [node1, node2].forEach(node => {
-        this.tweens.add({
-          targets: node,
-          scaleX: 1.2,
-          scaleY: 1.2,
-          duration: 200,
-          yoyo: true,
-          ease: 'Power2.easeInOut'
-        });
-      });
-    }
+    });
     
     const connection = { from: node1, to: node2, line: line };
     this.connections.push(connection);
@@ -1393,23 +1404,9 @@ class Rompecabezas extends Phaser.Scene {
     // Actualizar contador
     this.updateConnectionCounter();
     
-    // OPTIMIZACIÓN CRÍTICA PARA Safari iOS: Limpiar recursos más agresivamente
-    if (this.connections.length >= 4 && isSafari && isIOS) {
-      // Limpiar tweens y efectos antes de continuar en Safari iOS
-      this.time.delayedCall(50, () => {
-        this.cleanupResourcesForSafari();
-      });
-    } else if (this.connections.length >= 5 && isIOS) {
-      // Limpiar tweens y efectos antes de continuar en iOS
-      this.time.delayedCall(100, () => {
-        this.cleanupResourcesForIOS();
-      });
-    }
-    
     // Verificar si se completó el puzzle (6 conexiones mínimas)
     if (this.connections.length >= 6) {
-      const delay = isSafari && isIOS ? 1200 : (isIOS ? 800 : 500);
-      this.time.delayedCall(delay, () => {
+      this.time.delayedCall(500, () => {
         this.completeNeuralPuzzle();
       });
     }
@@ -1498,15 +1495,6 @@ class Rompecabezas extends Phaser.Scene {
   }
 
   completeNeuralPuzzle() {
-    // Detectar Safari iOS para optimizaciones ultra-agresivas
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    
-    // Limpiar recursos ANTES de cualquier animación en Safari iOS
-    if (isSafari && isIOS) {
-      this.cleanupResourcesForSafari();
-    }
-    
     // Calcular tiempo de finalización
     this.completionTime = Date.now();
     const timeElapsed = Math.round((this.completionTime - this.startTime) / 1000);
@@ -1515,86 +1503,34 @@ class Rompecabezas extends Phaser.Scene {
     const centerX = this.sys.game.config.width / 2;  // 500
     const centerY = this.sys.game.config.height / 2; // 250
     
-    // Efectos de celebración optimizados
-    if (isSafari && isIOS) {
-      // NO crear efectos de celebración en Safari iOS
-      console.log('Safari iOS: Saltando efectos de celebración para evitar congelamiento');
-    } else if (isIOS) {
-      // Versión simplificada para iOS
-      this.createSimpleCelebrationEffect();
-    } else {
-      // Versión completa para desktop
-      this.createCelebrationEffect();
-    }
+    // Efectos de celebración unificados para todas las plataformas
+    this.createSimpleCelebrationEffect();
     
-    // Animación de todos los nodos - eliminada completamente en Safari iOS
+    // Animación unificada de todos los nodos
     this.neuralNetworkNodes.forEach((node, index) => {
-      if (isSafari && isIOS) {
-        // NO animaciones en Safari iOS - solo cambio instantáneo
-        node.setScale(1.2);
-      } else if (isIOS) {
-        // Animación simple para iOS
-        this.tweens.add({
-          targets: node,
-          scale: { from: 1, to: 1.2 },
-          duration: 600,
-          delay: index * 50,
-          ease: 'Power2.easeOut'
-        });
-      } else {
-        // Animación completa para desktop
-        this.tweens.add({
-          targets: node,
-          scale: { from: 1, to: 1.5 },
-          rotation: Math.PI * 2,
-          duration: 1000,
-          delay: index * 100,
-          ease: 'Elastic.easeOut'
-        });
-        
-        // Efecto de brillo en los nodos solo en desktop
-        this.tweens.add({
-          targets: node,
-          tint: 0x00ff88,
-          duration: 500,
-          yoyo: true,
-          repeat: 3,
-          delay: index * 50
-        });
-      }
+      this.tweens.add({
+        targets: node,
+        scale: { from: 1, to: 1.2 },
+        duration: 600,
+        delay: index * 50,
+        ease: 'Power2.easeOut'
+      });
     });
     
-    // Animación de las conexiones - simplificada en iOS
+    // Animación unificada de las conexiones
     this.connections.forEach((connection, index) => {
       this.tweens.add({
         targets: connection.line,
         alpha: { from: 0.8, to: 1 },
-        duration: isIOS ? 200 : 300,
+        duration: 200,
         yoyo: true,
-        repeat: isIOS ? 2 : 5,
-        delay: index * (isIOS ? 50 : 100)
+        repeat: 2,
+        delay: index * 50
       });
     });
     
-    // Crear fondo decorativo con gradiente - solo en desktop
-    let decorativeBackground, glowEffect;
-    if (!isIOS) {
-      decorativeBackground = this.add.graphics();
-      decorativeBackground.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x0f0f23, 0x0f0f23, 0.95);
-      decorativeBackground.fillRoundedRect(centerX - 400, centerY - 120, 800, 240, 20);
-      decorativeBackground.lineStyle(3, 0x00ffff, 0.8);
-      decorativeBackground.strokeRoundedRect(centerX - 400, centerY - 120, 800, 240, 20);
-      
-      // Agregar efectos de brillo al fondo
-      glowEffect = this.add.graphics();
-      glowEffect.lineStyle(6, 0x00ffff, 0.3);
-      glowEffect.strokeRoundedRect(centerX - 403, centerY - 123, 806, 246, 23);
-      glowEffect.lineStyle(10, 0x00ffff, 0.1);
-      glowEffect.strokeRoundedRect(centerX - 408, centerY - 128, 816, 256, 28);
-    }
-    
-    // Crear partículas de celebración flotantes - reducidas en iOS
-    const particleCount = isIOS ? 5 : 15;
+    // Crear partículas de celebración flotantes unificadas
+    const particleCount = 10;
     for (let i = 0; i < particleCount; i++) {
       const particle = this.add.circle(
         centerX + Phaser.Math.Between(-450, 450),
@@ -1609,8 +1545,8 @@ class Rompecabezas extends Phaser.Scene {
         y: particle.y - Phaser.Math.Between(100, 200),
         alpha: { from: 0.7, to: 0 },
         scale: { from: 1, to: 0.3 },
-        duration: Phaser.Math.Between(isIOS ? 1500 : 2000, isIOS ? 3000 : 4000),
-        delay: Phaser.Math.Between(0, isIOS ? 500 : 1000),
+        duration: Phaser.Math.Between(2000, 3000),
+        delay: Phaser.Math.Between(0, 500),
         ease: 'Quad.easeOut'
       });
     }
@@ -1618,11 +1554,11 @@ class Rompecabezas extends Phaser.Scene {
     // Mensaje de felicitaciones espectacular y centrado
     const congratsTitle = this.add.text(centerX, centerY - 180, 
       '🎉✨ ¡MISIÓN CUMPLIDA! ✨🎉', {
-        fontSize: isIOS ? '28px' : '36px',
+        fontSize: '32px',
         fill: '#FFD700',
         fontWeight: 'bold',
         stroke: '#FF1493',
-        strokeThickness: isIOS ? 2 : 4,
+        strokeThickness: 3,
         fontFamily: 'Arial Black',
         shadow: {
           offsetX: 3,
@@ -1702,18 +1638,7 @@ class Rompecabezas extends Phaser.Scene {
       }
     ).setOrigin(0.5);
     
-    // Animaciones del texto de felicitaciones mejoradas
-    if (!isIOS && decorativeBackground && glowEffect) {
-      this.tweens.add({
-        targets: [decorativeBackground, glowEffect],
-        alpha: { from: 0, to: 1 },
-        scaleX: { from: 0.8, to: 1 },
-        scaleY: { from: 0.8, to: 1 },
-        duration: 600,
-        ease: 'Back.easeOut'
-      });
-    }
-    
+    // Animaciones del texto de felicitaciones unificadas
     this.tweens.add({
       targets: congratsTitle,
       scale: { from: 0.3, to: 1.2 },
@@ -1747,16 +1672,16 @@ class Rompecabezas extends Phaser.Scene {
       ease: 'Sine.easeInOut'
     });
     
-    // Efecto de brillo en el borde del fondo
-    this.tweens.add({
-      targets: glowEffect,
-      alpha: { from: 1, to: 0.3 },
-      duration: 2000,
-      yoyo: true,
-      repeat: -1,
-      delay: 800,
-      ease: 'Sine.easeInOut'
-    });
+    // Efecto de brillo en el borde del fondo - comentado ya que glowEffect no está definido
+    // this.tweens.add({
+    //   targets: glowEffect,
+    //   alpha: { from: 1, to: 0.3 },
+    //   duration: 2000,
+    //   yoyo: true,
+    //   repeat: -1,
+    //   delay: 800,
+    //   ease: 'Sine.easeInOut'
+    // });
     
     if (this.sounds && this.sounds.win) {
       this.sounds.win.play();
@@ -2094,70 +2019,6 @@ class Rompecabezas extends Phaser.Scene {
   }
 
   // Función de limpieza específica para iOS
-  cleanupResourcesForIOS() {
-    // Limpiar todos los tweens activos
-    this.tweens.killAll();
-    
-    // Limpiar partículas y efectos visuales
-    if (this.particles) {
-      this.particles.forEach(particle => {
-        if (particle && particle.destroy) {
-          particle.destroy();
-        }
-      });
-      this.particles = [];
-    }
-    
-    // Limpiar hints de conexión
-    this.clearConnectionHints();
-    
-    // Forzar garbage collection si está disponible
-    if (window.gc) {
-      window.gc();
-    }
-    
-    // Reducir la frecuencia de actualización temporalmente
-    this.physics.world.timeScale = 0.8;
-    
-    // Restaurar la velocidad normal después de un momento
-    this.time.delayedCall(1000, () => {
-      this.physics.world.timeScale = 1;
-    });
-  }
-  
-  cleanupResourcesForSafari() {
-    // Limpieza ultra-agresiva específica para Safari iOS
-    
-    // Detener TODOS los tweens inmediatamente
-    this.tweens.killAll();
-    
-    // Limpiar todos los timers
-    this.time.removeAllEvents();
-    
-    // Forzar garbage collection si está disponible
-    if (window.gc) {
-      window.gc();
-    }
-    
-    // Limpiar cache de texturas no utilizadas
-    this.textures.each((texture) => {
-      if (texture.key !== '__DEFAULT' && texture.key !== '__MISSING') {
-        texture.destroy();
-      }
-    });
-    
-    // Reducir calidad de render para Safari
-    this.renderer.setPixelRatio(0.5);
-    
-    // Pausar física temporalmente
-    this.physics.world.pause();
-    this.time.delayedCall(200, () => {
-      this.physics.world.resume();
-    });
-    
-    console.log('Safari iOS: Recursos limpiados agresivamente');
-  }
-  
   // Optimizar creación de partículas para evitar lag en móvil
   createOptimizedParticle(x, y, color, size = 3, duration = 1000) {
     // Detectar móvil para aplicar límites más estrictos

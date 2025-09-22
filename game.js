@@ -28,7 +28,7 @@ var config = {
     antialias: true,
     roundPixels: false,
   },
-  scene: [Rompecabezas, DroneRepairScene, ScenaPregunta1, CircuitosQuemados, scenaVideo4, Ultima],
+  scene: [scenaFallos,Rompecabezas, DroneRepairScene, ScenaPregunta1, CircuitosQuemados, scenaVideo4, Ultima],
 };
 //scenaFallos, Rompecabezas, DroneRepairScene, ScenaPregunta1, CircuitosQuemados
 
