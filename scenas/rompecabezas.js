@@ -1089,51 +1089,51 @@ class Rompecabezas extends Phaser.Scene {
       // Cambiar el color al estado seleccionado usando setFillStyle
       node.setFillStyle(0x00ffff, 0.8);
       
-      // Efectos visuales de selección mejorados
+      // Efectos visuales simplificados para móvil
       this.tweens.add({
         targets: node,
-        scaleX: 1.2,
-        scaleY: 1.2,
-        duration: 300,
-        ease: 'Elastic.easeOut'
+        scaleX: 1.15,
+        scaleY: 1.15,
+        duration: 200,
+        ease: 'Power2.easeOut'
       });
       
       this.tweens.add({
         targets: outerRing,
-        scaleX: 2.5,
-        scaleY: 2.5,
-        alpha: 0.9,
-        duration: 300,
+        scaleX: 2,
+        scaleY: 2,
+        alpha: 0.7,
+        duration: 200,
         ease: 'Power2'
       });
       
-      // Efecto de pulso continuo más intenso
+      // Pulso simplificado - solo 2 repeticiones en lugar de infinito
       this.tweens.add({
         targets: outerRing,
-        scaleX: { from: 2.5, to: 3 },
-        scaleY: { from: 2.5, to: 3 },
-        alpha: { from: 0.9, to: 0.5 },
-        duration: 600,
+        scaleX: { from: 2, to: 2.2 },
+        scaleY: { from: 2, to: 2.2 },
+        alpha: { from: 0.7, to: 0.4 },
+        duration: 400,
         yoyo: true,
-        repeat: -1,
+        repeat: 2,
         ease: 'Sine.easeInOut'
       });
       
-      // Partículas más activas con efectos de brillo
+      // Simplificar animación de partículas - solo cambio de escala
       particles.forEach((particle, index) => {
-        this.tweens.add({
-          targets: particle,
-          scaleX: 2.5,
-          scaleY: 2.5,
-          alpha: 1,
-          duration: 200,
-          delay: index * 50,
-          ease: 'Power2'
-        });
-        
-        // Efecto de brillo adicional
-        if (particle.setTint) {
-          particle.setTint(0xffff00);
+        if (index < 3) { // Limitar a solo 3 partículas para móvil
+          this.tweens.add({
+            targets: particle,
+            scaleX: 1.5,
+            scaleY: 1.5,
+            duration: 150,
+            ease: 'Power2'
+          });
+          
+          // Efecto de brillo simplificado
+          if (particle.setTint) {
+            particle.setTint(0xffff00);
+          }
         }
       });
       
@@ -1141,7 +1141,7 @@ class Rompecabezas extends Phaser.Scene {
         this.sounds.click.play();
       }
       
-      // NUEVA FUNCIONALIDAD: Mostrar pistas visuales de conexiones posibles
+      // Pistas visuales simplificadas para móvil
       this.showConnectionHints(node);
       
     } else if (this.selectedNode === node) {
@@ -1301,7 +1301,7 @@ class Rompecabezas extends Phaser.Scene {
   }
 
   createConnection(node1, node2) {
-    // Crear línea de conexión simple y eficiente
+    // Crear línea de conexión optimizada para móvil
     const line = this.add.graphics();
     
     // Calcular puntos de conexión
@@ -1327,17 +1327,34 @@ class Rompecabezas extends Phaser.Scene {
     line.lineTo(endX, endY);
     line.strokePath();
     
-    // Efecto simple de pulso en los nodos
-    [node1, node2].forEach(node => {
-      this.tweens.add({
-        targets: node,
-        scaleX: 1.2,
-        scaleY: 1.2,
-        duration: 200,
-        yoyo: true,
-        ease: 'Power2.easeInOut'
+    // Detectar móvil para simplificar efectos
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Efecto muy simple para móvil - solo un pequeño cambio de escala
+      [node1, node2].forEach(node => {
+        this.tweens.add({
+          targets: node,
+          scaleX: 1.1,
+          scaleY: 1.1,
+          duration: 150,
+          yoyo: true,
+          ease: 'Power2.easeInOut'
+        });
       });
-    });
+    } else {
+      // Efecto completo para desktop
+      [node1, node2].forEach(node => {
+        this.tweens.add({
+          targets: node,
+          scaleX: 1.2,
+          scaleY: 1.2,
+          duration: 200,
+          yoyo: true,
+          ease: 'Power2.easeInOut'
+        });
+      });
+    }
     
     const connection = { from: node1, to: node2, line: line };
     this.connections.push(connection);
@@ -1918,17 +1935,32 @@ class Rompecabezas extends Phaser.Scene {
   }
   
   updateOptimizedVisualEffects() {
+    // Detectar móvil para aplicar optimizaciones específicas
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     // Actualizar efectos visuales de manera eficiente
     if (this.gameState === 'neural_puzzle' && this.connections) {
-      // Actualizar brillo de conexiones de manera optimizada
-      this.connections.forEach((connection, index) => {
-        if (connection.line && connection.line.active) {
-          // Solo actualizar cada cierto tiempo para optimizar
-          if (this.time.now % (400 + index * 150) === 0) {
-            connection.line.setAlpha(Phaser.Math.FloatBetween(0.7, 1));
+      if (isMobile) {
+        // Versión ultra-simplificada para móvil
+        this.connections.forEach((connection, index) => {
+          if (connection.line && connection.line.active) {
+            // Solo actualizar cada segundo para móvil
+            if (this.time.now % 1000 === 0) {
+              connection.line.setAlpha(0.8); // Alpha fijo para móvil
+            }
           }
-        }
-      });
+        });
+      } else {
+        // Versión normal para desktop
+        this.connections.forEach((connection, index) => {
+          if (connection.line && connection.line.active) {
+            // Solo actualizar cada cierto tiempo para optimizar
+            if (this.time.now % (400 + index * 150) === 0) {
+              connection.line.setAlpha(Phaser.Math.FloatBetween(0.7, 1));
+            }
+          }
+        });
+      }
     }
   }
   
@@ -1953,10 +1985,13 @@ class Rompecabezas extends Phaser.Scene {
     });
   }
   
-  // Optimizar creación de partículas para evitar lag
+  // Optimizar creación de partículas para evitar lag en móvil
   createOptimizedParticle(x, y, color, size = 3, duration = 1000) {
-    // Limitar el número máximo de partículas simultáneas
-    const maxParticles = 30;
+    // Detectar móvil para aplicar límites más estrictos
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Limitar el número máximo de partículas según el dispositivo
+    const maxParticles = isMobile ? 10 : 30; // Mucho menos en móvil
     const currentParticles = this.children.list.filter(child => 
       child.type === 'Arc' && child.getData && child.getData('isParticle')
     ).length;
@@ -1965,11 +2000,13 @@ class Rompecabezas extends Phaser.Scene {
       return null; // No crear más partículas si ya hay muchas
     }
     
-    const particle = this.add.circle(x, y, size, color, 0.8);
+    // En móvil, crear partículas más simples
+    const particle = this.add.circle(x, y, isMobile ? size * 0.7 : size, color, isMobile ? 0.6 : 0.8);
     particle.setData('isParticle', true);
     
-    // Auto-destruir después del tiempo especificado
-    this.time.delayedCall(duration, () => {
+    // Auto-destruir después del tiempo especificado (más rápido en móvil)
+    const actualDuration = isMobile ? duration * 0.5 : duration;
+    this.time.delayedCall(actualDuration, () => {
       if (particle && particle.active) {
         particle.destroy();
       }
@@ -1981,22 +2018,31 @@ class Rompecabezas extends Phaser.Scene {
 
 
   updateNeuralNetworkEffects() {
+    // Detectar móvil para optimizar efectos
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     // Consolidar efectos de red neuronal con optimizaciones
     if (!this.connections || this.connections.length === 0) return;
     
+    if (isMobile) {
+      // Versión ultra-simplificada para móvil - sin efectos adicionales
+      return;
+    }
+    
+    // Solo ejecutar efectos en desktop
     this.connections.forEach((conn, index) => {
       if (conn.line && conn.line.active) {
         // Actualizar brillo de manera optimizada
-        if (this.time.now % (400 + index * 150) === 0) {
+        if (this.time.now % (800 + index * 300) === 0) { // Menos frecuente
           conn.line.setAlpha(Phaser.Math.FloatBetween(0.7, 1));
         }
         
-        // Efectos de activación ocasionales
-        if (Math.random() < 0.05) {
+        // Efectos de activación muy ocasionales
+        if (Math.random() < 0.02) { // Reducido de 0.05 a 0.02
           this.tweens.add({
             targets: conn.line,
             alpha: 1,
-            duration: 200,
+            duration: 150, // Más rápido
             yoyo: true
           });
         }
@@ -2021,7 +2067,7 @@ class Rompecabezas extends Phaser.Scene {
     }
   }
 
-  // NUEVAS FUNCIONES PARA PISTAS VISUALES
+  // FUNCIONES OPTIMIZADAS PARA PISTAS VISUALES EN MÓVIL
   showConnectionHints(selectedNode) {
     // Limpiar pistas anteriores
     this.clearConnectionHints();
@@ -2031,56 +2077,56 @@ class Rompecabezas extends Phaser.Scene {
       this.connectionHints = [];
     }
     
+    // Detectar si es móvil para simplificar efectos
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     // Encontrar nodos que se pueden conectar
     this.neuralNetworkNodes.forEach(node => {
       if (node !== selectedNode && this.canConnect(selectedNode, node)) {
-        // Crear efecto de brillo verde para nodos conectables
-        const hint = this.add.circle(node.x, node.y, 35, 0x00ff00, 0.3);
-        hint.setBlendMode(Phaser.BlendModes.ADD);
-        
-        // Animación de pulso
-        this.tweens.add({
-          targets: hint,
-          scaleX: { from: 1, to: 1.5 },
-          scaleY: { from: 1, to: 1.5 },
-          alpha: { from: 0.3, to: 0.6 },
-          duration: 800,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.easeInOut'
-        });
-        
-        this.connectionHints.push(hint);
-        
-        // Agregar texto indicativo
-        const hintText = this.add.text(node.x, node.y - 50, '¡Conectar aquí!', {
-          fontSize: '12px',
-          fill: '#00ff00',
-          fontFamily: 'Arial',
-          fontWeight: 'bold',
-          stroke: '#000000',
-          strokeThickness: 2
-        }).setOrigin(0.5);
-        
-        // Animación de aparición del texto
-        hintText.setAlpha(0);
-        this.tweens.add({
-          targets: hintText,
-          alpha: 1,
-          y: node.y - 60,
-          duration: 500,
-          ease: 'Power2'
-        });
-        
-        this.connectionHints.push(hintText);
+        if (isMobile) {
+          // Versión simplificada para móvil - solo círculo estático
+          const hint = this.add.circle(node.x, node.y, 30, 0x00ff00, 0.4);
+          this.connectionHints.push(hint);
+        } else {
+          // Versión completa para desktop
+          const hint = this.add.circle(node.x, node.y, 35, 0x00ff00, 0.3);
+          hint.setBlendMode(Phaser.BlendModes.ADD);
+          
+          // Animación de pulso simplificada
+          this.tweens.add({
+            targets: hint,
+            scaleX: { from: 1, to: 1.3 },
+            scaleY: { from: 1, to: 1.3 },
+            alpha: { from: 0.3, to: 0.5 },
+            duration: 600,
+            yoyo: true,
+            repeat: 1, // Solo 1 repetición en lugar de infinito
+            ease: 'Sine.easeInOut'
+          });
+          
+          this.connectionHints.push(hint);
+          
+          // Texto solo en desktop
+          const hintText = this.add.text(node.x, node.y - 50, '¡Conectar!', {
+            fontSize: '10px',
+            fill: '#00ff00',
+            fontFamily: 'Arial',
+            fontWeight: 'bold'
+          }).setOrigin(0.5);
+          
+          hintText.setAlpha(0.8); // Aparición directa sin animación
+          this.connectionHints.push(hintText);
+        }
       }
     });
   }
 
   clearConnectionHints() {
     if (this.connectionHints) {
+      // Matar todas las animaciones antes de destruir
       this.connectionHints.forEach(hint => {
         if (hint && hint.destroy) {
+          this.tweens.killTweensOf(hint);
           hint.destroy();
         }
       });
