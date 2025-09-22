@@ -1327,8 +1327,9 @@ class Rompecabezas extends Phaser.Scene {
     line.lineTo(endX, endY);
     line.strokePath();
     
-    // Detectar móvil para simplificar efectos
+    // Detectar móvil y específicamente iOS para optimizaciones especiales
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
     if (isMobile) {
       // Efecto muy simple para móvil - solo un pequeño cambio de escala
@@ -1365,9 +1366,17 @@ class Rompecabezas extends Phaser.Scene {
     // Actualizar contador
     this.updateConnectionCounter();
     
+    // OPTIMIZACIÓN CRÍTICA PARA iOS: Limpiar recursos antes de completar
+    if (this.connections.length >= 5 && isIOS) {
+      // Limpiar tweens y efectos antes de continuar en iOS
+      this.time.delayedCall(100, () => {
+        this.cleanupResourcesForIOS();
+      });
+    }
+    
     // Verificar si se completó el puzzle (6 conexiones mínimas)
     if (this.connections.length >= 6) {
-      this.time.delayedCall(500, () => {
+      this.time.delayedCall(isIOS ? 800 : 500, () => {
         this.completeNeuralPuzzle();
       });
     }
@@ -1460,65 +1469,88 @@ class Rompecabezas extends Phaser.Scene {
     this.completionTime = Date.now();
     const timeElapsed = Math.round((this.completionTime - this.startTime) / 1000);
     
+    // Detectar iOS para optimizaciones específicas
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
     // Obtener dimensiones del juego para centrado perfecto
     const centerX = this.sys.game.config.width / 2;  // 500
     const centerY = this.sys.game.config.height / 2; // 250
     
-    // Efectos de celebración mejorados
+    // Efectos de celebración optimizados para iOS
+    if (isIOS) {
+      // Versión simplificada para iOS
+      this.createSimpleCelebrationEffect();
+    } else {
+      // Versión completa para desktop
+      this.createCelebrationEffect();
+    }
     
-    // Crear explosión de partículas de celebración
-    this.createCelebrationEffect();
-    
-    // Animación de todos los nodos
+    // Animación de todos los nodos - simplificada en iOS
     this.neuralNetworkNodes.forEach((node, index) => {
-      this.tweens.add({
-        targets: node,
-        scale: { from: 1, to: 1.5 },
-        rotation: Math.PI * 2,
-        duration: 1000,
-        delay: index * 100,
-        ease: 'Elastic.easeOut'
-      });
-      
-      // Efecto de brillo en los nodos
-      this.tweens.add({
-        targets: node,
-        tint: 0x00ff88,
-        duration: 500,
-        yoyo: true,
-        repeat: 3,
-        delay: index * 50
-      });
+      if (isIOS) {
+        // Animación simple para iOS
+        this.tweens.add({
+          targets: node,
+          scale: { from: 1, to: 1.2 },
+          duration: 600,
+          delay: index * 50,
+          ease: 'Power2.easeOut'
+        });
+      } else {
+        // Animación completa para desktop
+        this.tweens.add({
+          targets: node,
+          scale: { from: 1, to: 1.5 },
+          rotation: Math.PI * 2,
+          duration: 1000,
+          delay: index * 100,
+          ease: 'Elastic.easeOut'
+        });
+        
+        // Efecto de brillo en los nodos solo en desktop
+        this.tweens.add({
+          targets: node,
+          tint: 0x00ff88,
+          duration: 500,
+          yoyo: true,
+          repeat: 3,
+          delay: index * 50
+        });
+      }
     });
     
-    // Animación de las conexiones
+    // Animación de las conexiones - simplificada en iOS
     this.connections.forEach((connection, index) => {
       this.tweens.add({
         targets: connection.line,
         alpha: { from: 0.8, to: 1 },
-        duration: 300,
+        duration: isIOS ? 200 : 300,
         yoyo: true,
-        repeat: 5,
-        delay: index * 100
+        repeat: isIOS ? 2 : 5,
+        delay: index * (isIOS ? 50 : 100)
       });
     });
     
-    // Crear fondo decorativo con gradiente
-    const decorativeBackground = this.add.graphics();
-    decorativeBackground.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x0f0f23, 0x0f0f23, 0.95);
-    decorativeBackground.fillRoundedRect(centerX - 400, centerY - 120, 800, 240, 20);
-    decorativeBackground.lineStyle(3, 0x00ffff, 0.8);
-    decorativeBackground.strokeRoundedRect(centerX - 400, centerY - 120, 800, 240, 20);
+    // Crear fondo decorativo con gradiente - solo en desktop
+    let decorativeBackground, glowEffect;
+    if (!isIOS) {
+      decorativeBackground = this.add.graphics();
+      decorativeBackground.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x0f0f23, 0x0f0f23, 0.95);
+      decorativeBackground.fillRoundedRect(centerX - 400, centerY - 120, 800, 240, 20);
+      decorativeBackground.lineStyle(3, 0x00ffff, 0.8);
+      decorativeBackground.strokeRoundedRect(centerX - 400, centerY - 120, 800, 240, 20);
+      
+      // Agregar efectos de brillo al fondo
+      glowEffect = this.add.graphics();
+      glowEffect.lineStyle(6, 0x00ffff, 0.3);
+      glowEffect.strokeRoundedRect(centerX - 403, centerY - 123, 806, 246, 23);
+      glowEffect.lineStyle(10, 0x00ffff, 0.1);
+      glowEffect.strokeRoundedRect(centerX - 408, centerY - 128, 816, 256, 28);
+    }
     
-    // Agregar efectos de brillo al fondo
-    const glowEffect = this.add.graphics();
-    glowEffect.lineStyle(6, 0x00ffff, 0.3);
-    glowEffect.strokeRoundedRect(centerX - 403, centerY - 123, 806, 246, 23);
-    glowEffect.lineStyle(10, 0x00ffff, 0.1);
-    glowEffect.strokeRoundedRect(centerX - 408, centerY - 128, 816, 256, 28);
-    
-    // Crear partículas de celebración flotantes
-    for (let i = 0; i < 15; i++) {
+    // Crear partículas de celebración flotantes - reducidas en iOS
+    const particleCount = isIOS ? 5 : 15;
+    for (let i = 0; i < particleCount; i++) {
       const particle = this.add.circle(
         centerX + Phaser.Math.Between(-450, 450),
         centerY + Phaser.Math.Between(-150, 150),
@@ -1532,8 +1564,8 @@ class Rompecabezas extends Phaser.Scene {
         y: particle.y - Phaser.Math.Between(100, 200),
         alpha: { from: 0.7, to: 0 },
         scale: { from: 1, to: 0.3 },
-        duration: Phaser.Math.Between(2000, 4000),
-        delay: Phaser.Math.Between(0, 1000),
+        duration: Phaser.Math.Between(isIOS ? 1500 : 2000, isIOS ? 3000 : 4000),
+        delay: Phaser.Math.Between(0, isIOS ? 500 : 1000),
         ease: 'Quad.easeOut'
       });
     }
@@ -1541,11 +1573,11 @@ class Rompecabezas extends Phaser.Scene {
     // Mensaje de felicitaciones espectacular y centrado
     const congratsTitle = this.add.text(centerX, centerY - 180, 
       '🎉✨ ¡MISIÓN CUMPLIDA! ✨🎉', {
-        fontSize: '36px',
+        fontSize: isIOS ? '28px' : '36px',
         fill: '#FFD700',
         fontWeight: 'bold',
         stroke: '#FF1493',
-        strokeThickness: 4,
+        strokeThickness: isIOS ? 2 : 4,
         fontFamily: 'Arial Black',
         shadow: {
           offsetX: 3,
@@ -1626,14 +1658,16 @@ class Rompecabezas extends Phaser.Scene {
     ).setOrigin(0.5);
     
     // Animaciones del texto de felicitaciones mejoradas
-    this.tweens.add({
-      targets: [decorativeBackground, glowEffect],
-      alpha: { from: 0, to: 1 },
-      scaleX: { from: 0.8, to: 1 },
-      scaleY: { from: 0.8, to: 1 },
-      duration: 600,
-      ease: 'Back.easeOut'
-    });
+    if (!isIOS && decorativeBackground && glowEffect) {
+      this.tweens.add({
+        targets: [decorativeBackground, glowEffect],
+        alpha: { from: 0, to: 1 },
+        scaleX: { from: 0.8, to: 1 },
+        scaleY: { from: 0.8, to: 1 },
+        duration: 600,
+        ease: 'Back.easeOut'
+      });
+    }
     
     this.tweens.add({
       targets: congratsTitle,
@@ -1873,6 +1907,35 @@ class Rompecabezas extends Phaser.Scene {
     }
   }
 
+  // Función de celebración simplificada para iOS
+  createSimpleCelebrationEffect() {
+    const centerX = this.sys.game.config.width / 2;
+    const centerY = this.sys.game.config.height / 2;
+    
+    // Solo crear 3 partículas simples
+    for (let i = 0; i < 3; i++) {
+      const particle = this.add.circle(
+        centerX + Phaser.Math.Between(-100, 100),
+        centerY + Phaser.Math.Between(-50, 50),
+        5,
+        0x00ff88
+      );
+      
+      // Animación muy simple
+      this.tweens.add({
+        targets: particle,
+        alpha: { from: 1, to: 0 },
+        scale: { from: 1, to: 0.5 },
+        duration: 1000,
+        delay: i * 200,
+        ease: 'Power2.easeOut',
+        onComplete: () => {
+          particle.destroy();
+        }
+      });
+    }
+  }
+
   setupControls() {
     // Controles de teclado para navegación
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -1982,6 +2045,38 @@ class Rompecabezas extends Phaser.Scene {
       if (child.type === 'Arc' && child.alpha <= 0) {
         child.destroy();
       }
+    });
+  }
+
+  // Función de limpieza específica para iOS
+  cleanupResourcesForIOS() {
+    // Limpiar todos los tweens activos
+    this.tweens.killAll();
+    
+    // Limpiar partículas y efectos visuales
+    if (this.particles) {
+      this.particles.forEach(particle => {
+        if (particle && particle.destroy) {
+          particle.destroy();
+        }
+      });
+      this.particles = [];
+    }
+    
+    // Limpiar hints de conexión
+    this.clearConnectionHints();
+    
+    // Forzar garbage collection si está disponible
+    if (window.gc) {
+      window.gc();
+    }
+    
+    // Reducir la frecuencia de actualización temporalmente
+    this.physics.world.timeScale = 0.8;
+    
+    // Restaurar la velocidad normal después de un momento
+    this.time.delayedCall(1000, () => {
+      this.physics.world.timeScale = 1;
     });
   }
   
