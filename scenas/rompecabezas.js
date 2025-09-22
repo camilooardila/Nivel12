@@ -450,74 +450,69 @@ class Rompecabezas extends Phaser.Scene {
       'Conecta todos los nodos para\n' +
       'completar la misión.';
 
-    // Botón de inicio con efectos mejorados y soporte móvil
-    const startButton = this.add.text(500, 350, '▶ INICIAR MISIÓN', {
-      fontSize: '20px',
+    // Crear área de toque de pantalla completa para móvil
+    const fullScreenTouchArea = this.add.rectangle(500, 250, 1000, 500, 0x000000, 0)
+      .setInteractive()
+      .setDepth(-1);
+
+    // Texto de instrucción para móvil
+    const touchInstruction = this.add.text(500, 350, 'Presiona en cualquier parte para iniciar', {
+      fontSize: '18px',
       fill: '#00ff88',
       backgroundColor: '#1a1a2e',
       padding: { x: 20, y: 10 },
       fontFamily: 'Arial'
-    }).setOrigin(0.5).setInteractive({
-      useHandCursor: true,
-      pixelPerfect: false,
-      alphaTolerance: 1
-    });
+    }).setOrigin(0.5);
 
-    // Variable para controlar si el botón ya fue presionado
-    let buttonPressed = false;
+    // Variable para controlar si ya se inició
+    let missionStarted = false;
 
-    // Función para manejar la activación del botón
-    const activateButton = (pointer, localX, localY, event) => {
-      if (buttonPressed) return;
-      buttonPressed = true;
+    // Función para iniciar la misión
+    const startMission = (pointer) => {
+      if (missionStarted) return;
+      missionStarted = true;
       
-      // Prevenir comportamiento por defecto en móvil
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      
-      // Reproducir sonido de clic (removido para evitar errores)
-      // this.sounds.click.play();
-      
-      // Forzar inicio de música al hacer clic en iniciar (removido)
-      // this.forceStartMusic();
-      
-      // Animación de clic mejorada
+      // Efecto visual de activación en el texto
       this.tweens.add({
-        targets: startButton,
+        targets: touchInstruction,
         scaleX: 0.95,
         scaleY: 0.95,
         duration: 100,
-        yoyo: true,
+        yoyo: true
+      });
+
+      // Efecto de flash en toda la pantalla
+      const flashEffect = this.add.rectangle(500, 250, 1000, 500, 0x00ff88, 0.3);
+      this.tweens.add({
+        targets: flashEffect,
+        alpha: 0,
+        duration: 200,
         onComplete: () => {
+          flashEffect.destroy();
           this.transitionToNeuralPuzzle();
         }
       });
     };
 
-    // Efectos del botón mejorados con soporte móvil
-    // Evento principal para desktop y móvil
-    startButton.on('pointerdown', activateButton);
-    
-    // Eventos específicos para móvil como respaldo
-    startButton.on('touchstart', activateButton);
+    // Configurar eventos de toque en toda la pantalla
+    fullScreenTouchArea.on('pointerdown', startMission);
+    fullScreenTouchArea.on('touchstart', startMission);
 
-    // Efectos visuales mejorados
+    // Efectos visuales del texto (solo visuales)
     const handleHoverStart = () => {
-      if (buttonPressed) return;
+      if (missionStarted) return;
       
       this.tweens.add({
-        targets: startButton,
+        targets: touchInstruction,
         scale: 1.1,
         duration: 200,
         ease: 'Power2'
       });
-      startButton.setFill('#ffffff');
+      touchInstruction.setFill('#ffffff');
       
       // Efecto de brillo
       this.tweens.add({
-        targets: startButton,
+        targets: touchInstruction,
         alpha: { from: 1, to: 0.8 },
         duration: 300,
         yoyo: true,
@@ -526,38 +521,22 @@ class Rompecabezas extends Phaser.Scene {
     };
 
     const handleHoverEnd = () => {
-      if (buttonPressed) return;
+      if (missionStarted) return;
       
-      this.tweens.killTweensOf(startButton);
+      this.tweens.killTweensOf(touchInstruction);
       this.tweens.add({
-        targets: startButton,
+        targets: touchInstruction,
         scale: 1,
         alpha: 1,
         duration: 200,
         ease: 'Power2'
       });
-      startButton.setFill('#00ff88');
+      touchInstruction.setFill('#00ff88');
     };
 
-    // Eventos de hover para desktop
-    startButton.on('pointerover', handleHoverStart);
-    startButton.on('pointerout', handleHoverEnd);
-    
-    // Eventos táctiles adicionales para móvil
-    startButton.on('touchstart', (pointer, localX, localY, event) => {
-      if (event) {
-        event.preventDefault();
-      }
-      handleHoverStart();
-    });
-    
-    startButton.on('touchend', (pointer, localX, localY, event) => {
-      if (event) {
-        event.preventDefault();
-      }
-      // Pequeño delay para mostrar el efecto visual antes de resetear
-      this.time.delayedCall(50, handleHoverEnd);
-    });
+    // Eventos de hover para el área completa
+    fullScreenTouchArea.on('pointerover', handleHoverStart);
+    fullScreenTouchArea.on('pointerout', handleHoverEnd);
 
     // Animaciones de entrada mejoradas
     this.tweens.add({
@@ -593,15 +572,59 @@ class Rompecabezas extends Phaser.Scene {
       repeat: fullStory.length - 1
     });
 
-    // Animación del botón de inicio
+    // Animación de la instrucción de toque
     this.tweens.add({
-      targets: startButton,
+      targets: touchInstruction,
       alpha: { from: 0, to: 1 },
-      scale: { from: 0.3, to: 1 },
       y: { from: 400, to: 350 },
       duration: 1000,
       delay: 2000,
       ease: 'Bounce.easeOut'
+    });
+
+    // Animación de pulso continuo
+    this.tweens.add({
+      targets: touchInstruction,
+      scaleX: { from: 1, to: 1.1 },
+      scaleY: { from: 1, to: 1.1 },
+      duration: 800,
+      delay: 3000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
+    // Efecto de parpadeo en la instrucción
+    this.tweens.add({
+      targets: touchInstruction,
+      alpha: { from: 1, to: 0.7 },
+      duration: 1200,
+      delay: 3200,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
+    // Animación de flotación sutil
+    this.tweens.add({
+      targets: touchInstruction,
+      y: { from: 350, to: 345 },
+      duration: 2000,
+      delay: 3500,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Power1.easeInOut'
+    });
+
+    // Efecto de brillo y cambio de color
+    this.tweens.add({
+      targets: touchInstruction,
+      tint: { from: 0x00ff88, to: 0xffffff },
+      duration: 1500,
+      delay: 4000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Power2.easeInOut'
     });
 
     // Efecto de brillo en el título
