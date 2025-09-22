@@ -92,6 +92,9 @@ class Rompecabezas extends Phaser.Scene {
   }
 
   create() {
+    // Configurar optimizaciones para móvil
+    this.setupMobileOptimizations();
+    
     // Configurar la música de fondo
     this.musicManager = MusicManager.getInstance();
     if (!this.musicManager.isPlaying()) {
@@ -121,6 +124,46 @@ class Rompecabezas extends Phaser.Scene {
     
     // Configurar interacción para habilitar audio (removido)
     // this.input.on('pointerdown', this.enableAudio, this);
+  }
+
+  setupMobileOptimizations() {
+    // Configurar input para móvil
+    this.input.addPointer(2); // Soporte para multi-touch
+    
+    // Prevenir zoom en móvil
+    if (this.sys.game.device.input.touch) {
+      this.input.mouse.disableContextMenu();
+      
+      // Configurar viewport para móvil
+      const viewport = document.querySelector('meta[name="viewport"]');
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      } else {
+        const meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+      }
+      
+      // Prevenir comportamientos por defecto en móvil
+      document.addEventListener('touchstart', (e) => {
+        if (e.target.tagName === 'CANVAS') {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      document.addEventListener('touchend', (e) => {
+        if (e.target.tagName === 'CANVAS') {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      document.addEventListener('touchmove', (e) => {
+        if (e.target.tagName === 'CANVAS') {
+          e.preventDefault();
+        }
+      }, { passive: false });
+    }
   }
 
   // Método setupAudio completamente removido para evitar errores de audio
@@ -407,17 +450,33 @@ class Rompecabezas extends Phaser.Scene {
       'Conecta todos los nodos para\n' +
       'completar la misión.';
 
-    // Botón de inicio con efectos mejorados
+    // Botón de inicio con efectos mejorados y soporte móvil
     const startButton = this.add.text(500, 350, '▶ INICIAR MISIÓN', {
       fontSize: '20px',
       fill: '#00ff88',
       backgroundColor: '#1a1a2e',
       padding: { x: 20, y: 10 },
       fontFamily: 'Arial'
-    }).setOrigin(0.5).setInteractive();
+    }).setOrigin(0.5).setInteractive({
+      useHandCursor: true,
+      pixelPerfect: false,
+      alphaTolerance: 1
+    });
 
-    // Efectos del botón mejorados
-    startButton.on('pointerdown', () => {
+    // Variable para controlar si el botón ya fue presionado
+    let buttonPressed = false;
+
+    // Función para manejar la activación del botón
+    const activateButton = (pointer, localX, localY, event) => {
+      if (buttonPressed) return;
+      buttonPressed = true;
+      
+      // Prevenir comportamiento por defecto en móvil
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      
       // Reproducir sonido de clic (removido para evitar errores)
       // this.sounds.click.play();
       
@@ -435,9 +494,19 @@ class Rompecabezas extends Phaser.Scene {
           this.transitionToNeuralPuzzle();
         }
       });
-    });
+    };
 
-    startButton.on('pointerover', () => {
+    // Efectos del botón mejorados con soporte móvil
+    // Evento principal para desktop y móvil
+    startButton.on('pointerdown', activateButton);
+    
+    // Eventos específicos para móvil como respaldo
+    startButton.on('touchstart', activateButton);
+
+    // Efectos visuales mejorados
+    const handleHoverStart = () => {
+      if (buttonPressed) return;
+      
       this.tweens.add({
         targets: startButton,
         scale: 1.1,
@@ -454,9 +523,11 @@ class Rompecabezas extends Phaser.Scene {
         yoyo: true,
         repeat: -1
       });
-    });
+    };
 
-    startButton.on('pointerout', () => {
+    const handleHoverEnd = () => {
+      if (buttonPressed) return;
+      
       this.tweens.killTweensOf(startButton);
       this.tweens.add({
         targets: startButton,
@@ -466,6 +537,26 @@ class Rompecabezas extends Phaser.Scene {
         ease: 'Power2'
       });
       startButton.setFill('#00ff88');
+    };
+
+    // Eventos de hover para desktop
+    startButton.on('pointerover', handleHoverStart);
+    startButton.on('pointerout', handleHoverEnd);
+    
+    // Eventos táctiles adicionales para móvil
+    startButton.on('touchstart', (pointer, localX, localY, event) => {
+      if (event) {
+        event.preventDefault();
+      }
+      handleHoverStart();
+    });
+    
+    startButton.on('touchend', (pointer, localX, localY, event) => {
+      if (event) {
+        event.preventDefault();
+      }
+      // Pequeño delay para mostrar el efecto visual antes de resetear
+      this.time.delayedCall(50, handleHoverEnd);
     });
 
     // Animaciones de entrada mejoradas
