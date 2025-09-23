@@ -28,8 +28,9 @@ var config = {
     antialias: true,
     roundPixels: false,
   },
-  scene: [scenaFallos,Rompecabezas, DroneRepairScene, ScenaPregunta1, CircuitosQuemados, scenaVideo4, Ultima],
+  scene: [scenaFallos, Rompecabezas, DroneRepairScene, ScenaPregunta1, CircuitosQuemados, scenaVideo4, Ultima],
 };
+//Papasito rico me encantas
 //scenaFallos, Rompecabezas, DroneRepairScene, ScenaPregunta1, CircuitosQuemados
 
 // Crear el contenedor del juego

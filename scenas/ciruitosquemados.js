@@ -810,17 +810,17 @@ class CircuitosQuemados extends Phaser.Scene {
         // Contenedor principal de la pregunta con efectos
         const questionContainer = this.add.container(this.centerX, this.centerY - 50);
         
-        // Fondo principal de la pregunta
+        // Fondo principal de la pregunta - transparente
         const mainBg = this.add.graphics();
-        mainBg.fillStyle(0x0a0a0a, 0.9);
+        mainBg.fillStyle(0x0a0a0a, 0); // Cambiado a transparente
         mainBg.fillRoundedRect(-500, -200, 1000, 400, 25);
-        mainBg.lineStyle(3, 0x00ff88, 0.7);
-        mainBg.strokeRoundedRect(-500, -200, 1000, 400, 25);
+        // mainBg.lineStyle(3, 0x00ff88, 0.7); // Borde verde removido
+        // mainBg.strokeRoundedRect(-500, -200, 1000, 400, 25); // Borde verde removido
         
-        // Efecto de brillo en el borde
+        // Efecto de brillo en el borde - removido
         const glowBg = this.add.graphics();
-        glowBg.lineStyle(1, 0x00ff88, 0.3);
-        glowBg.strokeRoundedRect(-505, -205, 1010, 410, 25);
+        // glowBg.lineStyle(1, 0x00ff88, 0.3); // Borde verde removido
+        // glowBg.strokeRoundedRect(-505, -205, 1010, 410, 25); // Borde verde removido
         
         questionContainer.add([glowBg, mainBg]);
 
@@ -844,13 +844,13 @@ class CircuitosQuemados extends Phaser.Scene {
         questionData.examples.forEach((example, index) => {
             const exampleContainer = this.add.container(0, yOffset);
             
-            // Fondo del ejemplo
+            // Fondo del ejemplo - transparente
             const exampleBg = this.add.graphics();
-            const colors = [0x1a472a, 0x7c2d12, 0x1e3a8a]; // Verde, rojo, azul
-            exampleBg.fillStyle(colors[index], 0.6);
+            const colors = [0x00ff88, 0xff6600, 0x0088ff]; // Verde, naranja, azul
+            exampleBg.fillStyle(colors[index], 0); // Cambiado a transparente
             exampleBg.fillRoundedRect(-450, -12, 900, 24, 12);
-            exampleBg.lineStyle(1, colors[index] + 0x444444, 0.8);
-            exampleBg.strokeRoundedRect(-450, -12, 900, 24, 12);
+            exampleBg.lineStyle(2, colors[index], 0.8); // Borde con color visible
+            exampleBg.strokeRoundedRect(-450, -12, 900, 24, 12); // Borde con color visible
             
             const exampleText = this.add.text(0, 0, example, {
                 fontSize: '14px',
@@ -867,12 +867,12 @@ class CircuitosQuemados extends Phaser.Scene {
             yOffset += 30;
         });
 
-        // Pregunta principal con diseño destacado
+        // Pregunta principal con diseño destacado - transparente
         const mainQuestionBg = this.add.graphics();
-        mainQuestionBg.fillStyle(0x1a1a2e, 0.8);
+        mainQuestionBg.fillStyle(0x1a1a2e, 0); // Cambiado a transparente
         mainQuestionBg.fillRoundedRect(-480, yOffset + 8, 960, 50, 15);
-        mainQuestionBg.lineStyle(2, 0xffaa00, 0.9);
-        mainQuestionBg.strokeRoundedRect(-480, yOffset + 8, 960, 50, 15);
+        mainQuestionBg.lineStyle(3, 0xffaa00, 0.9); // Borde amarillo visible
+        mainQuestionBg.strokeRoundedRect(-480, yOffset + 8, 960, 50, 15); // Borde amarillo visible
         
         const mainQuestion = this.add.text(0, yOffset + 33, questionData.question, {
             fontSize: '18px',

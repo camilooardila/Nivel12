@@ -50,6 +50,9 @@ class Rompecabezas extends Phaser.Scene {
     this.load.image('neural_node', 'assets/neural_node.svg');
     this.load.image('neural_node_selected', 'assets/neural_node_selected.svg');
     
+    // Cargar imagen de referencia del patrón objetivo
+    this.load.image('nodo_pattern', 'assets/rompecabezas/Nodo.png');
+    
     // Cargar efectos de sonido (comentados para evitar errores)
     // this.load.audio('click', 'assets/sounds/click.mp3');
     // this.load.audio('success', 'assets/sounds/success.mp3');
@@ -732,13 +735,7 @@ class Rompecabezas extends Phaser.Scene {
     
     this.gameState = 'neural_puzzle';
     
-    // Título de la fase
-    const phaseTitle = this.add.text(500, 30, '🧠 FASE 1: DECODIFICACIÓN NEURONAL', {
-      fontSize: '20px',
-      fill: '#ff6b35',
-      fontWeight: 'bold',
-      fontFamily: 'Arial'
-    }).setOrigin(0.5);
+    
 
     // Comenzar directamente el puzzle interactivo
     this.startInteractivePuzzle();
@@ -748,11 +745,28 @@ class Rompecabezas extends Phaser.Scene {
     // Registrar tiempo de inicio
     this.startTime = Date.now();
     
+    // Definir el patrón objetivo que el jugador debe replicar
+    this.targetPattern = [
+      { from: 0, to: 2 }, // Nodo 1 -> Nodo 3
+      { from: 0, to: 3 }, // Nodo 1 -> Nodo 4
+      { from: 1, to: 3 }, // Nodo 2 -> Nodo 4
+      { from: 1, to: 4 }, // Nodo 2 -> Nodo 5
+      { from: 2, to: 5 }, // Nodo 3 -> Nodo 6
+      { from: 3, to: 6 }, // Nodo 4 -> Nodo 7
+  
+      { from: 6, to: 4 }, // Nodo 7 -> Nodo 5 (conexión agregada)
+      { from: 6, to: 8 }, // Nodo 7 -> Nodo 9
+      { from: 7, to: 9 }  // Nodo 8 -> Nodo 10
+    ];
+    
+    // Crear imagen de referencia
+    this.createReferenceImage();
+    
     // Crear red neuronal interactiva directamente
     this.createInteractiveNeuralNetwork();
     
     // Contador de conexiones actualizado
-    this.connectionCounter = this.add.text(50, 470, 'Conexiones: 0/6 ✨', {
+    this.connectionCounter = this.add.text(50, 470, 'Conexiones: 0/10 ✨', {
       fontSize: '14px',
       fill: '#00ff88',
       fontFamily: 'Arial',
@@ -760,6 +774,138 @@ class Rompecabezas extends Phaser.Scene {
       stroke: '#000000',
       strokeThickness: 1
     });
+    
+    // Instrucciones del juego
+    this.instructionText = this.add.text(500, 470, 'Replica el patrón de la imagen de referencia', {
+      fontSize: '14px',
+      fill: '#ffaa00',
+      fontFamily: 'Arial',
+      fontWeight: 'bold',
+      stroke: '#000000',
+      strokeThickness: 1
+    }).setOrigin(0.5);
+    
+    // Botón de patrón objetivo
+    this.patternButton = this.add.text(50, 50, '📋 PATRÓN OBJETIVO', {
+      fontSize: '14px',
+      fill: '#00ff88',
+      fontFamily: 'Arial',
+      fontWeight: 'bold',
+      stroke: '#000000',
+      strokeThickness: 1,
+      backgroundColor: '#001122',
+      padding: { x: 10, y: 6 }
+    }).setOrigin(0);
+    
+    this.patternButton.setInteractive({ useHandCursor: true });
+    
+    // Variable para controlar si la imagen está visible
+    this.patternImageVisible = false;
+    this.patternImage = null;
+    
+    this.patternButton.on('pointerdown', () => {
+      this.togglePatternImage();
+    });
+    
+    // Efecto hover para el botón de patrón objetivo
+    this.patternButton.on('pointerover', () => {
+      this.tweens.add({
+        targets: this.patternButton,
+        scale: 1.05,
+        duration: 200,
+        ease: 'Power2.easeOut'
+      });
+    });
+    
+    this.patternButton.on('pointerout', () => {
+      this.tweens.add({
+        targets: this.patternButton,
+        scale: 1,
+        duration: 200,
+        ease: 'Power2.easeOut'
+      });
+    });
+
+    // Botón de reinicio
+    this.resetButton = this.add.text(850, 470, '🔄 Reiniciar', {
+      fontSize: '14px',
+      fill: '#ff6b35',
+      fontFamily: 'Arial',
+      fontWeight: 'bold',
+      stroke: '#000000',
+      strokeThickness: 1,
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 }
+    }).setOrigin(0.5);
+    
+    this.resetButton.setInteractive({ useHandCursor: true });
+    this.resetButton.on('pointerdown', () => {
+      this.resetPuzzle();
+    });
+    
+    // Efecto hover para el botón de reinicio
+    this.resetButton.on('pointerover', () => {
+      this.tweens.add({
+        targets: this.resetButton,
+        scale: 1.1,
+        duration: 200,
+        ease: 'Power2.easeOut'
+      });
+    });
+    
+    this.resetButton.on('pointerout', () => {
+      this.tweens.add({
+        targets: this.resetButton,
+        scale: 1,
+        duration: 200,
+        ease: 'Power2.easeOut'
+      });
+    });
+  }
+  
+  resetPuzzle() {
+    // Limpiar todas las conexiones existentes
+    this.connections.forEach(connection => {
+      if (connection.line) {
+        connection.line.destroy();
+      }
+    });
+    this.connections = [];
+    
+    // Resetear nodo seleccionado
+    this.selectedNode = null;
+    
+    // Actualizar contador
+    this.updateConnectionCounter();
+    
+    // Mostrar mensaje de reinicio
+    const resetMsg = this.add.text(500, 200, '🔄 Puzzle reiniciado', {
+      fontSize: '16px',
+      fill: '#ff6b35',
+      fontFamily: 'Arial',
+      fontWeight: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+    
+    // Animación y destrucción automática del mensaje
+    this.tweens.add({
+      targets: resetMsg,
+      y: 180,
+      alpha: 0,
+      duration: 1500,
+      ease: 'Power2.easeOut',
+      onComplete: () => resetMsg.destroy()
+    });
+    
+    // Sonido de reinicio si está disponible
+    if (this.sounds && this.sounds.click) {
+      this.sounds.click.play();
+    }
+  }
+
+  createReferenceImage() {
+    // Función vacía - la imagen ahora se mostrará mediante botón
   }
 
   createInteractiveNeuralNetwork() {
@@ -1376,12 +1522,72 @@ class Rompecabezas extends Phaser.Scene {
     
     const startColor = layerColors[node1.layer];
     
-    // Dibujar línea simple
-    line.lineStyle(3, startColor.primary, 0.8);
+    // Verificar si esta conexión es correcta según el patrón objetivo
+    const connectionId1 = `${node1.nodeId}-${node2.nodeId}`;
+    const connectionId2 = `${node2.nodeId}-${node1.nodeId}`;
+    const isCorrectConnection = this.targetPattern.some(pattern => 
+      (pattern.from === node1.nodeId && pattern.to === node2.nodeId) ||
+      (pattern.from === node2.nodeId && pattern.to === node1.nodeId)
+    );
+    
+    // Usar color verde para conexiones correctas, rojo para incorrectas
+    const connectionColor = isCorrectConnection ? 0x00ff88 : 0xff4444;
+    
+    // Dibujar línea con color según si es correcta o no
+    line.lineStyle(3, connectionColor, 0.8);
     line.beginPath();
     line.moveTo(startX, startY);
     line.lineTo(endX, endY);
     line.strokePath();
+    
+    // Efecto visual diferente según si la conexión es correcta
+    if (isCorrectConnection) {
+      // Efecto de éxito - brillo verde
+      const glowLine = this.add.graphics();
+      glowLine.lineStyle(6, 0x88ffaa, 0.4);
+      glowLine.beginPath();
+      glowLine.moveTo(startX, startY);
+      glowLine.lineTo(endX, endY);
+      glowLine.strokePath();
+      glowLine.setBlendMode(Phaser.BlendModes.ADD);
+      
+      // Animación de pulso para conexión correcta
+      this.tweens.add({
+        targets: glowLine,
+        alpha: 0.1,
+        duration: 1000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+      
+      // Sonido de éxito
+      if (this.sounds && this.sounds.success) {
+        this.sounds.success.play();
+      }
+      
+      // Mostrar mensaje de éxito temporal
+      this.showSuccessMessage('✅ ¡Conexión correcta!');
+      
+    } else {
+      // Efecto de error - parpadeo rojo
+      this.tweens.add({
+        targets: line,
+        alpha: 0.3,
+        duration: 300,
+        yoyo: true,
+        repeat: 2,
+        ease: 'Power2.easeInOut'
+      });
+      
+      // Sonido de error
+      if (this.sounds && this.sounds.error) {
+        this.sounds.error.play();
+      }
+      
+      // Mostrar mensaje de error temporal
+      this.showErrorMessage('❌ Conexión incorrecta');
+    }
     
     // Efecto unificado para todas las plataformas
     [node1, node2].forEach(node => {
@@ -1395,7 +1601,14 @@ class Rompecabezas extends Phaser.Scene {
       });
     });
     
-    const connection = { from: node1, to: node2, line: line };
+    const connection = { 
+      from: node1, 
+      to: node2, 
+      line: line, 
+      isCorrect: isCorrectConnection,
+      fromId: node1.nodeId,
+      toId: node2.nodeId
+    };
     this.connections.push(connection);
     
     // Incrementar contador de conexiones totales
@@ -1404,12 +1617,148 @@ class Rompecabezas extends Phaser.Scene {
     // Actualizar contador
     this.updateConnectionCounter();
     
-    // Verificar si se completó el puzzle (6 conexiones mínimas)
-    if (this.connections.length >= 6) {
-      this.time.delayedCall(500, () => {
-        this.completeNeuralPuzzle();
-      });
+    // Verificar si se completó el puzzle correctamente
+    this.checkPuzzleCompletion();
+  }
+  
+  checkPuzzleCompletion() {
+    // Contar conexiones correctas
+    const correctConnections = this.connections.filter(conn => conn.isCorrect).length;
+    const totalCorrectNeeded = this.targetPattern.length;
+    
+    // Actualizar progreso
+    this.updateProgressDisplay(correctConnections, totalCorrectNeeded);
+    
+    // Verificar si todas las conexiones correctas están hechas
+    if (correctConnections === totalCorrectNeeded) {
+      // Verificar que no hay conexiones incorrectas
+      const incorrectConnections = this.connections.filter(conn => !conn.isCorrect).length;
+      
+      if (incorrectConnections === 0) {
+        // ¡Puzzle completado perfectamente!
+        this.time.delayedCall(500, () => {
+          this.completePuzzleSuccessfully();
+        });
+      } else {
+        // Hay conexiones incorrectas, mostrar mensaje
+        this.showHintMessage(`¡Bien! Tienes ${correctConnections}/${totalCorrectNeeded} conexiones correctas, pero elimina las ${incorrectConnections} incorrectas.`);
+      }
+    } else if (this.connections.length >= 10) {
+      // Demasiadas conexiones, sugerir reinicio
+      this.showHintMessage('Demasiadas conexiones. Haz clic en "Reiniciar" para intentar de nuevo.');
     }
+  }
+  
+  updateProgressDisplay(correct, total) {
+    // Actualizar contador con progreso
+    this.connectionCounter.setText(`Progreso: ${correct}/${total} correctas ✨`);
+    
+    // Cambiar color según progreso
+    if (correct === total) {
+      this.connectionCounter.setFill('#00ff88'); // Verde cuando está completo
+    } else if (correct > total / 2) {
+      this.connectionCounter.setFill('#ffaa00'); // Naranja cuando está a la mitad
+    } else {
+      this.connectionCounter.setFill('#ffffff'); // Blanco al inicio
+    }
+  }
+  
+  completePuzzleSuccessfully() {
+    // Efectos visuales de victoria
+    this.cameras.main.flash(500, 0, 255, 0, false);
+    
+    // Sonido de victoria
+    if (this.sounds && this.sounds.victory) {
+      this.sounds.victory.play();
+    }
+    
+    // Mensaje de victoria
+    const victoryText = this.add.text(500, 250, '🎉 ¡PATRÓN COMPLETADO! 🎉', {
+      fontSize: '32px',
+      fill: '#00ff88',
+      fontFamily: 'Arial Black',
+      fontWeight: 'bold',
+      stroke: '#000000',
+      strokeThickness: 3
+    }).setOrigin(0.5);
+    
+    // Animación del texto de victoria
+    this.tweens.add({
+      targets: victoryText,
+      scale: 1.2,
+      duration: 500,
+      yoyo: true,
+      repeat: 2,
+      ease: 'Back.easeInOut'
+    });
+    
+    // Continuar al siguiente nivel después de 3 segundos
+    this.time.delayedCall(3000, () => {
+      this.completeNeuralPuzzle();
+    });
+  }
+  
+  showSuccessMessage(message) {
+    const successMsg = this.add.text(500, 200, message, {
+      fontSize: '18px',
+      fill: '#00ff88',
+      fontFamily: 'Arial',
+      fontWeight: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+    
+    // Animación y destrucción automática
+    this.tweens.add({
+      targets: successMsg,
+      y: 180,
+      alpha: 0,
+      duration: 2000,
+      ease: 'Power2.easeOut',
+      onComplete: () => successMsg.destroy()
+    });
+  }
+  
+  showErrorMessage(message) {
+    const errorMsg = this.add.text(500, 200, message, {
+      fontSize: '18px',
+      fill: '#ff4444',
+      fontFamily: 'Arial',
+      fontWeight: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+    
+    // Animación y destrucción automática
+    this.tweens.add({
+      targets: errorMsg,
+      y: 180,
+      alpha: 0,
+      duration: 2000,
+      ease: 'Power2.easeOut',
+      onComplete: () => errorMsg.destroy()
+    });
+  }
+  
+  showHintMessage(message) {
+    const hintMsg = this.add.text(500, 220, message, {
+      fontSize: '14px',
+      fill: '#ffaa00',
+      fontFamily: 'Arial',
+      fontWeight: 'bold',
+      stroke: '#000000',
+      strokeThickness: 1,
+      wordWrap: { width: 600 }
+    }).setOrigin(0.5);
+    
+    // Animación y destrucción automática
+    this.tweens.add({
+      targets: hintMsg,
+      alpha: 0,
+      duration: 4000,
+      ease: 'Power2.easeOut',
+      onComplete: () => hintMsg.destroy()
+    });
   }
   
   createConnectionParticles(startX, startY, endX, endY, midX, midY) {
@@ -1432,6 +1781,11 @@ class Rompecabezas extends Phaser.Scene {
   }
   
   updateConnectionCounter() {
+    // Contar conexiones correctas e incorrectas
+    const correctConnections = this.connections.filter(conn => conn.isCorrect).length;
+    const incorrectConnections = this.connections.filter(conn => !conn.isCorrect).length;
+    const totalCorrectNeeded = this.targetPattern.length;
+    
     // Animación del contador
     this.tweens.add({
       targets: this.connectionCounter,
@@ -1441,12 +1795,10 @@ class Rompecabezas extends Phaser.Scene {
       ease: 'Power2'
     });
     
-    this.connectionCounter.setText(`Conexiones: ${this.connections.length}/6 ✨`);
-    
-    // Cambiar color según progreso con emojis
-    if (this.connections.length >= 6) {
+    // Actualizar texto con progreso detallado
+    if (correctConnections === totalCorrectNeeded && incorrectConnections === 0) {
+      this.connectionCounter.setText(`¡Perfecto! ${correctConnections}/${totalCorrectNeeded} 🎉`);
       this.connectionCounter.setFill('#00ff88');
-      this.connectionCounter.setText(`¡Completado! ${this.connections.length}/6 🎉`);
       this.tweens.add({
         targets: this.connectionCounter,
         alpha: { from: 1, to: 0.7 },
@@ -1454,11 +1806,23 @@ class Rompecabezas extends Phaser.Scene {
         yoyo: true,
         repeat: -1
       });
-    } else if (this.connections.length >= 4) {
-      this.connectionCounter.setFill('#ffaa00');
-      this.connectionCounter.setText(`¡Casi listo! ${this.connections.length}/6 🔥`);
-    } else if (this.connections.length >= 2) {
-      this.connectionCounter.setText(`¡Buen inicio! ${this.connections.length}/6 ⚡`);
+    } else {
+      let statusText = `Progreso: ${correctConnections}/${totalCorrectNeeded} correctas`;
+      if (incorrectConnections > 0) {
+        statusText += ` (${incorrectConnections} incorrectas)`;
+      }
+      statusText += ' ✨';
+      
+      this.connectionCounter.setText(statusText);
+      
+      // Cambiar color según progreso
+      if (correctConnections === totalCorrectNeeded) {
+        this.connectionCounter.setFill('#ffaa00'); // Naranja si tiene todas correctas pero hay incorrectas
+      } else if (correctConnections > totalCorrectNeeded / 2) {
+        this.connectionCounter.setFill('#ffaa00'); // Naranja cuando está a la mitad
+      } else {
+        this.connectionCounter.setFill('#ffffff'); // Blanco al inicio
+      }
     }
   }
 
@@ -1595,7 +1959,7 @@ class Rompecabezas extends Phaser.Scene {
     
     // Estadísticas del jugador con diseño premium
     const statsMsg = this.add.text(centerX, centerY - 70, 
-      `📊✨ ANÁLISIS DE RENDIMIENTO EXCEPCIONAL ✨📊\n⏱️🔥 Tiempo récord: ${timeElapsed} segundos\n🔗💎 Conexiones perfectas: ${this.totalConnections}/6\n⚡🏅 Nivel de maestría: ${this.totalConnections === 6 ? '🌟 LEGENDARIO 🌟' : '💫 EXTRAORDINARIO 💫'}`, {
+      `📊✨ ANÁLISIS DE RENDIMIENTO EXCEPCIONAL ✨📊\n⏱️🔥 Tiempo récord: ${timeElapsed} segundos\n🔗💎 Conexiones perfectas: ${this.totalConnections}/9n⚡🏅 Nivel de maestría: ${this.totalConnections === 6 ? '🌟 LEGENDARIO 🌟' : '💫 EXTRAORDINARIO 💫'}`, {
         fontSize: '13px',
         fill: '#FFD700',
         backgroundColor: 'rgba(25, 15, 0, 0.9)',
@@ -2165,6 +2529,45 @@ class Rompecabezas extends Phaser.Scene {
         }
       });
       this.connectionHints = [];
+    }
+  }
+
+  // Función para mostrar/ocultar la imagen del patrón objetivo
+  togglePatternImage() {
+    if (this.patternImageVisible) {
+      // Ocultar la imagen
+      if (this.patternImage) {
+        // Destruir overlay también
+        if (this.patternImage.overlay) {
+          this.patternImage.overlay.destroy();
+        }
+        this.patternImage.destroy();
+        this.patternImage = null;
+      }
+      this.patternImageVisible = false;
+      this.patternButton.setText('📋 PATRÓN OBJETIVO');
+    } else {
+      // Mostrar la imagen centrada en la pantalla
+      this.patternImage = this.add.image(500, 250, 'nodo_pattern')
+        .setOrigin(0.5)
+        .setScale(0.3)
+        .setDepth(1000); // Asegurar que esté por encima de todo
+      
+      // Agregar fondo semi-transparente
+      const overlay = this.add.rectangle(500, 250, 1000, 500, 0x000000, 0.7)
+        .setDepth(999)
+        .setInteractive();
+      
+      // Hacer clic en el overlay también cierra la imagen
+      overlay.on('pointerdown', () => {
+        this.togglePatternImage();
+      });
+      
+      // Guardar referencia al overlay para poder destruirlo
+      this.patternImage.overlay = overlay;
+      
+      this.patternImageVisible = true;
+      this.patternButton.setText('❌ CERRAR PATRÓN');
     }
   }
 }

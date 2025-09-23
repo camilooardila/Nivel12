@@ -629,23 +629,23 @@ class scenaFallos extends Phaser.Scene {
       node.nodeIndex = index;
       node.isActive = false;
       
-      // Animación de pulso constante para todos los nodos
+      // Animación de pulso MUY SUTIL para nodos que no están en la secuencia
       this.tweens.add({
         targets: node,
-        scaleX: 1.1,
-        scaleY: 1.1,
-        alpha: 0.9,
-        duration: 1500 + (index * 100), // Diferentes duraciones para efecto ondulante
+        scaleX: 1.02, // Reducido de 1.1 a 1.02
+        scaleY: 1.02, // Reducido de 1.1 a 1.02
+        alpha: 0.85,  // Reducido de 0.9 a 0.85
+        duration: 3000 + (index * 200), // Aumentado de 1500 a 3000 para ser más lento
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut'
       });
       
-      // Animación de brillo en el borde
+      // Animación de brillo en el borde MUY REDUCIDA
       this.tweens.add({
         targets: node,
-        strokeAlpha: 1,
-        duration: 2000 + (index * 150),
+        strokeAlpha: 0.7, // Reducido de 1 a 0.7
+        duration: 4000 + (index * 300), // Aumentado de 2000 a 4000 para ser más lento
         yoyo: true,
         repeat: -1,
         ease: 'Power2.easeInOut'
@@ -656,48 +656,47 @@ class scenaFallos extends Phaser.Scene {
         this.handleNodeClick(node);
       });
       
-      // Hover effects mejorados
+      // Hover effects REDUCIDOS para no distraer
       node.on('pointerover', () => {
         // Detener animaciones de pulso temporalmente
         this.tweens.killTweensOf(node);
         
-        // Animación de hover más dramática
+        // Animación de hover MÁS SUTIL
         this.tweens.add({
           targets: node,
-          scaleX: 1.4,
-          scaleY: 1.4,
-          alpha: 1,
-          strokeAlpha: 1,
-          duration: 200,
-          ease: 'Back.easeOut'
+          scaleX: 1.15, // Reducido de 1.4 a 1.15
+          scaleY: 1.15, // Reducido de 1.4 a 1.15
+          alpha: 0.95,  // Reducido de 1 a 0.95
+          strokeAlpha: 0.9, // Reducido de 1 a 0.9
+          duration: 300, // Aumentado de 200 a 300 para ser más suave
+          ease: 'Power2.easeOut' // Cambiado de Back.easeOut a Power2.easeOut para ser menos dramático
         });
         
-        node.setFillStyle(0x00ffff, 0.9);
-        node.setStrokeStyle(4, 0xffffff, 1);
+        node.setFillStyle(0x00ffff, 0.8); // Reducido alpha de 0.9 a 0.8
+        node.setStrokeStyle(3, 0xffffff, 0.8); // Reducido grosor de 4 a 3 y alpha de 1 a 0.8
         
-        // Efecto de ondas expansivas
-        this.createRippleEffect(node.x, node.y, 0x00ffff);
+        // NO crear efecto de ondas expansivas para reducir distracción
       });
       
       node.on('pointerout', () => {
         if (!node.isActive) {
-          // Restaurar animaciones de pulso
+          // Restaurar animaciones de pulso MÁS SUTILES
           this.tweens.add({
             targets: node,
             scaleX: 1,
             scaleY: 1,
             alpha: 0.8,
             strokeAlpha: 0.6,
-            duration: 300,
+            duration: 400, // Aumentado de 300 a 400 para transición más suave
             ease: 'Power2.easeOut',
             onComplete: () => {
-              // Reiniciar animaciones de pulso
+              // Reiniciar animaciones de pulso REDUCIDAS
               this.tweens.add({
                 targets: node,
-                scaleX: 1.1,
-                scaleY: 1.1,
-                alpha: 0.9,
-                duration: 1500 + (index * 100),
+                scaleX: 1.02, // Manteniendo el valor reducido
+                scaleY: 1.02, // Manteniendo el valor reducido
+                alpha: 0.85,  // Manteniendo el valor reducido
+                duration: 3000 + (index * 200), // Manteniendo la duración más lenta
                 yoyo: true,
                 repeat: -1,
                 ease: 'Sine.easeInOut'
@@ -705,8 +704,8 @@ class scenaFallos extends Phaser.Scene {
               
               this.tweens.add({
                 targets: node,
-                strokeAlpha: 1,
-                duration: 2000 + (index * 150),
+                strokeAlpha: 0.7, // Manteniendo el valor reducido
+                duration: 4000 + (index * 300), // Manteniendo la duración más lenta
                 yoyo: true,
                 repeat: -1,
                 ease: 'Power2.easeInOut'
@@ -754,34 +753,34 @@ class scenaFallos extends Phaser.Scene {
       // Línea estática de fondo
       staticGraphics.lineBetween(node1.x, node1.y, node2.x, node2.y);
       
-      // Crear línea animada para flujo de datos
+      // Crear línea animada para flujo de datos MÁS SUTIL
       const animatedLine = this.add.graphics();
-      animatedLine.lineStyle(3, 0x00ffff, 0);
+      animatedLine.lineStyle(2, 0x00ffff, 0); // Reducido grosor de 3 a 2
       animatedLine.lineBetween(node1.x, node1.y, node2.x, node2.y);
       this.connectionLines.push(animatedLine);
       
-      // Animación de pulso en las conexiones
+      // Animación de pulso en las conexiones MÁS REDUCIDA
       this.tweens.add({
         targets: animatedLine,
-        alpha: 0.8,
-        duration: 2000 + (index * 200),
+        alpha: 0.4, // Reducido de 0.8 a 0.4
+        duration: 4000 + (index * 400), // Aumentado de 2000 a 4000 para ser más lento
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut'
       });
       
-      // Crear partículas de datos que viajan por las conexiones
-      this.time.delayedCall(index * 300, () => {
+      // Crear partículas de datos que viajan por las conexiones CON MENOS FRECUENCIA
+      this.time.delayedCall(index * 600, () => { // Aumentado de 300 a 600 para menos frecuencia
         this.createDataParticle(node1, node2, index);
       });
     });
     
-    // Timer para crear partículas periódicamente
+    // Timer para crear partículas periódicamente CON MENOS FRECUENCIA
     this.dataFlowTimer = this.time.addEvent({
-      delay: 3000,
+      delay: 6000, // Aumentado de 3000 a 6000 para menos frecuencia
       callback: () => {
         connections.forEach((connection, index) => {
-          if (Math.random() < 0.3) { // 30% de probabilidad
+          if (Math.random() < 0.15) { // Reducido de 30% a 15% de probabilidad
             const node1 = this.neuralNodes[connection[0]];
             const node2 = this.neuralNodes[connection[1]];
             this.createDataParticle(node1, node2, index);
@@ -800,30 +799,29 @@ class scenaFallos extends Phaser.Scene {
       return;
     }
     
-    // Crear partícula de datos
-    const particle = this.add.circle(startNode.x, startNode.y, 3, 0xffffff, 0.9);
-    particle.setStrokeStyle(1, 0x00ffff, 1);
+    // Crear partícula de datos MÁS SUTIL
+    const particle = this.add.circle(startNode.x, startNode.y, 2, 0xffffff, 0.6); // Reducido tamaño de 3 a 2 y alpha de 0.9 a 0.6
+    particle.setStrokeStyle(1, 0x00ffff, 0.6); // Reducido alpha del stroke de 1 a 0.6
     
-    // Efecto de brillo en la partícula
+    // Efecto de brillo en la partícula MÁS REDUCIDO
     this.tweens.add({
       targets: particle,
-      alpha: 0.5,
-      duration: 500,
+      alpha: 0.3, // Reducido de 0.5 a 0.3
+      duration: 1000, // Aumentado de 500 a 1000 para ser más lento
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut'
     });
     
-    // Movimiento de la partícula a lo largo de la conexión
+    // Movimiento de la partícula a lo largo de la conexión MÁS LENTO
     this.tweens.add({
       targets: particle,
       x: endNode.x,
       y: endNode.y,
-      duration: 1500 + (connectionIndex * 100),
+      duration: 2500 + (connectionIndex * 200), // Aumentado de 1500 a 2500 para ser más lento
       ease: 'Power2.easeInOut',
       onComplete: () => {
-        // Efecto de llegada
-        this.createRippleEffect(endNode.x, endNode.y, 0xffffff);
+        // NO crear efecto de llegada para reducir distracción
         particle.destroy();
       }
     });
